@@ -100,7 +100,7 @@ router.get('/product/:id', auth, async (req, res) => {
 
 router.patch('/update-product/:id', auth, async (req, res) => {
     const updates = Object.keys(req.body)
-    const allowedUpdates = ['title', 'description', 'price', 'count']
+    const allowedUpdates = ['title', 'description', 'buyingPrice', 'sellingPrice', 'count']
     const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
 
     if (!isValidOperation) {
@@ -134,7 +134,10 @@ router.delete('/delete-product/:id', auth, async (req, res) => {
             res.status(404).send()
         }
 
-        res.send({...resSuccessObject})
+        res.send({
+            ...resSuccessObject,
+            message: `Product '${product['title']}' deleted successfully! `
+        })
     } catch (e) {
         res.status(500).send()
     }
@@ -149,7 +152,11 @@ router.delete('/delete-multiple-product', auth, async (req, res) => {
         if (!deletedProducts) {
             res.status(404).send()
         }
-        res.send({...resSuccessObject})
+        
+        res.send({
+            ...resSuccessObject,
+            message: `Products deleted successfully! `
+        })
 
     } catch(e) {
         res.status(500).send()

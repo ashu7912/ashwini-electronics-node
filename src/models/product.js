@@ -10,7 +10,11 @@ const productSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    price: {
+    buyingPrice: {
+        type: String,
+        default: '0.0'
+    },
+    sellingPrice: {
         type: String,
         default: '0.0'
     },
