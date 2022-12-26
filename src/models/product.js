@@ -26,11 +26,21 @@ const productSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'User'
+    },
+    image: {
+        type: Buffer
     }
 }, {
     timestamps: true,
     toJSON: {virtuals: true}
 })
+
+productSchema.methods.toJSON = function() {
+    const product = this
+    const productObject = product.toObject()
+    delete productObject.image
+    return productObject
+}
 
 const Product = mongoose.model('Product', productSchema)
 

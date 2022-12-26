@@ -18,6 +18,22 @@ const port = process.env.PORT
 //     res.status(503).send('Site is currently down. Check back soon!')
 // })
 
+
+// File Uploads Example------------
+// const multer = require('multer');
+// const upload = multer({
+//     dest: 'images'
+// });
+
+
+// app.post('/upload', upload.single('upload'), (req, res) => {
+//     res.send();
+// })
+
+
+// File Uploads Example------------
+
+
 app.use(express.json())
 app.use(userRouter)
 app.use(productRouter)

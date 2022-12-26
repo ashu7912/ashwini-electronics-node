@@ -2,6 +2,8 @@ const express = require('express')
 const Product = require('../models/product')
 const auth = require('../middleware/auth')
 const router = new express.Router()
+const multer = require('multer')
+const sharp = require('sharp')
 
 const resSuccessObject = require('../models/responce')
 
@@ -160,6 +162,64 @@ router.delete('/delete-multiple-product', auth, async (req, res) => {
 
     } catch(e) {
         res.status(500).send()
+    }
+})
+
+
+const upload = multer({
+    // dest: 'avatar',
+    limits: {
+        fileSize: 4000000
+    },
+    fileFilter(req, file, cb) {
+        if(!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            cb(new Error('Please upload an image.'))
+        }
+
+        cb(undefined, true)
+    }
+});
+
+router.post('/products/:id/image', auth,  upload.single('product_image'), async (req, res) => {
+    const buffer = await sharp(req.file.buffer).resize({width: 200, height: 200}).png().toBuffer();
+    const product = await Product.findOne({ _id: req.params.id, owner: req.user._id});
+    product.image = buffer;
+    // req.user.avatar = buffer;
+    // req.user.avatar = req.file.buffer;
+    await product.save()
+    res.send({
+        ...resSuccessObject,
+        message: `Image added successfully! `
+    })
+}, (error, req, res, next)=> {
+    res.status(400).send({error: error.message});
+})
+
+
+router.delete('/products/:id/image', auth, async (req, res) => {
+    const product = await Product.findById(req.params.id);
+    product.image = undefined;
+    await product.save()
+    res.send({
+        ...resSuccessObject,
+        message: `Product image deleted successfully!`
+    });
+    // req.user.avatar = undefined;
+    // await req.user.save()
+    // res.send()
+})
+
+router.get('/products/:id/image', async(req, res)=> {
+    try {
+        const product = await Product.findById(req.params.id);
+        if(!product || !product.image) {
+            throw new Error();
+        }
+
+        res.set('Content-Type', 'image/jpg');
+        res.send(product.image);
+    } catch(e) {
+        res.status(404).send();
     }
 })
 
