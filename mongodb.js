@@ -23,7 +23,7 @@ MongoClient.connect(connectionURL, { useNewUrlParser: true}, (error, client)=> {
         if (error) {
             return console.log('Unable to fetch data!')
         }
-        console.log(res)
+        // console.log(res)
     })
 
 })
