@@ -28,54 +28,94 @@ router.post('/add-product', auth, async (req, res) => {
 // GET /products?completed=true
 // GET /products?limit=10&skip=20
 // GET /products?sortBy=createdAt:desc
+
+// router.get('/products', auth, async (req, res) => {
+//     // const products = await Product.find({});
+//     // res.send(products)
+//     const match = {}
+//     const sort = {}
+
+//     if (req.query.completed) {
+//         match.completed = req.query.completed === 'true'
+//     }
+
+
+//     if (req.query.startDate && req.query.endDate) {
+//         match.createdAt = {
+//             "$gte":req.query.startDate,
+//             "$lte":req.query.endDate
+//         }
+//     }
+
+//     if (req.query.sortBy) {
+//         const parts = req.query.sortBy.split(':')
+//         sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
+//     }
+
+//     // const products = await Product.find({});
+//     // res.send(products)
+//     // console.log(req.user)
+//     try {
+//         await req.user.populate({
+//             path: 'product',
+//             match,
+//             options: {
+//                 limit: parseInt(req.query.limit),
+//                 skip: parseInt(req.query.skip),
+//                 sort,
+//             }
+//         })
+//         res.send({
+//             ...resSuccessObject,
+//             data: req.user.product
+//         })
+//         // const products = await Product.find({
+//         //     "createdAt":{
+//         //         "$gte":req.query.startDate,
+//         //         "$lte":req.query.endDate
+//         //     }
+//         // }
+//         // )
+//         // res.send(products)
+//     } catch (e) {
+//         res.status(500).send()
+//     }
+// })
+
+// GET /products?completed=true
+// GET /products?limit=10&skip=20
+// GET /products?sortBy=createdAt:desc
+
 router.get('/products', auth, async (req, res) => {
-    // const products = await Product.find({});
-    // res.send(products)
+    
+    let products = []
     const match = {}
     const sort = {}
+    let limit = 0
+    let skip = 0
 
-    if (req.query.completed) {
-        match.completed = req.query.completed === 'true'
-    }
-
-    
     if (req.query.startDate && req.query.endDate) {
-        match.createdAt = {
-            "$gte":req.query.startDate,
-            "$lte":req.query.endDate
-        }
-    }
 
+        match.createdAt = {
+            "$gte": req.query.startDate,
+            "$lte": req.query.endDate
+        }
+    } 
     if (req.query.sortBy) {
         const parts = req.query.sortBy.split(':')
         sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
-    }
+    } if (req.query.limit && req.query.skip) {
+        limit = req.query.limit
+        skip = req.query.skip
+    } 
     
-    // const products = await Product.find({});
-    // res.send(products)
-    // console.log(req.user)
+    products = await Product.find(match).collation({ locale: "en" }).sort(sort).limit(limit).skip(skip)
+
     try {
-        await req.user.populate({
-            path: 'product',
-            match,
-            options: {
-                limit: parseInt(req.query.limit),
-                skip: parseInt(req.query.skip),
-                sort
-            }
-        })
         res.send({
             ...resSuccessObject,
-            data: req.user.product
+            data: products
         })
-        // const products = await Product.find({
-        //     "createdAt":{
-        //         "$gte":req.query.startDate,
-        //         "$lte":req.query.endDate
-        //     }
-        // }
-        // )
-        // res.send(products)
     } catch (e) {
         res.status(500).send()
     }
@@ -110,7 +150,7 @@ router.patch('/update-product/:id', auth, async (req, res) => {
     }
 
     try {
-        const product = await Product.findOne({ _id: req.params.id, owner: req.user._id})
+        const product = await Product.findOne({ _id: req.params.id, owner: req.user._id })
 
         if (!product) {
             return res.status(404).send()
@@ -149,18 +189,18 @@ router.delete('/delete-multiple-product', auth, async (req, res) => {
     console.log(req.body.product_ids)
     const product_ids = req.body.product_ids
     try {
-        const deletedProducts = await Product.deleteMany({_id : {$in: product_ids}})
-        
+        const deletedProducts = await Product.deleteMany({ _id: { $in: product_ids } })
+
         if (!deletedProducts) {
             res.status(404).send()
         }
-        
+
         res.send({
             ...resSuccessObject,
             message: `Products deleted successfully! `
         })
 
-    } catch(e) {
+    } catch (e) {
         res.status(500).send()
     }
 })
@@ -172,7 +212,7 @@ const upload = multer({
         fileSize: 4000000
     },
     fileFilter(req, file, cb) {
-        if(!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
             cb(new Error('Please upload an image.'))
         }
 
@@ -180,9 +220,9 @@ const upload = multer({
     }
 });
 
-router.post('/products/:id/image', auth,  upload.single('product_image'), async (req, res) => {
-    const buffer = await sharp(req.file.buffer).resize({width: 200, height: 200}).png().toBuffer();
-    const product = await Product.findOne({ _id: req.params.id, owner: req.user._id});
+router.post('/products/:id/image', auth, upload.single('product_image'), async (req, res) => {
+    const buffer = await sharp(req.file.buffer).resize({ width: 200, height: 200 }).png().toBuffer();
+    const product = await Product.findOne({ _id: req.params.id, owner: req.user._id });
     product.image = buffer;
     // req.user.avatar = buffer;
     // req.user.avatar = req.file.buffer;
@@ -191,8 +231,8 @@ router.post('/products/:id/image', auth,  upload.single('product_image'), async 
         ...resSuccessObject,
         message: `Image added successfully! `
     })
-}, (error, req, res, next)=> {
-    res.status(400).send({error: error.message});
+}, (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
 })
 
 
@@ -209,16 +249,16 @@ router.delete('/products/:id/image', auth, async (req, res) => {
     // res.send()
 })
 
-router.get('/products/:id/image', async(req, res)=> {
+router.get('/products/:id/image', async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
-        if(!product || !product.image) {
+        if (!product || !product.image) {
             throw new Error();
         }
 
         res.set('Content-Type', 'image/jpg');
         res.send(product.image);
-    } catch(e) {
+    } catch (e) {
         res.status(404).send();
     }
 })
