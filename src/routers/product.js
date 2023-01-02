@@ -221,7 +221,7 @@ const upload = multer({
 });
 
 router.post('/products/:id/image', auth, upload.single('product_image'), async (req, res) => {
-    const buffer = await sharp(req.file.buffer).resize({ width: 200, height: 200 }).png().toBuffer();
+    const buffer = await sharp(req.file.buffer).resize({ width: 400, height: 400 }).png().toBuffer();
     const product = await Product.findOne({ _id: req.params.id, owner: req.user._id });
     product.image = buffer;
     // req.user.avatar = buffer;
