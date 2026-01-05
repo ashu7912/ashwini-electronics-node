@@ -7,6 +7,9 @@ const sharp = require('sharp')
 
 const resSuccessObject = require('../models/responce')
 
+/**
+ * Add new Product 
+ */
 router.post('/add-product', auth, async (req, res) => {
     const product = new Product({
         ...req.body,
@@ -86,6 +89,9 @@ router.post('/add-product', auth, async (req, res) => {
 // GET /products?limit=10&skip=20
 // GET /products?sortBy=createdAt:desc
 
+/**
+ * Get list of products
+ */
 router.get('/products', auth, async (req, res) => {
     
     let products = []
@@ -121,11 +127,15 @@ router.get('/products', auth, async (req, res) => {
     }
 })
 
+/**
+ * Get Product by ProductID
+ */
 router.get('/product/:id', auth, async (req, res) => {
     const _id = req.params.id
 
     try {
-        const product = await Product.findOne({ _id, owner: req.user._id })
+        // const product = await Product.findOne({ _id, owner: req.user._id })
+        const product = await Product.findById(_id);
 
         if (!product) {
             return res.status(404).send()
@@ -140,6 +150,9 @@ router.get('/product/:id', auth, async (req, res) => {
     }
 })
 
+/**
+ * Update Product by ProductID
+ */
 router.patch('/update-product/:id', auth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['title', 'description', 'buyingPrice', 'sellingPrice', 'count']
@@ -150,7 +163,8 @@ router.patch('/update-product/:id', auth, async (req, res) => {
     }
 
     try {
-        const product = await Product.findOne({ _id: req.params.id, owner: req.user._id })
+        // const product = await Product.findOne({ _id: req.params.id, owner: req.user._id })
+        const product = await Product.findById(req.params.id);
 
         if (!product) {
             return res.status(404).send()
@@ -168,9 +182,13 @@ router.patch('/update-product/:id', auth, async (req, res) => {
     }
 })
 
+/**
+ * Delete Product by ProductID
+ */
 router.delete('/delete-product/:id', auth, async (req, res) => {
     try {
-        const product = await Product.findOneAndDelete({ _id: req.params.id, owner: req.user._id })
+        // const product = await Product.findOneAndDelete({ _id: req.params.id, owner: req.user._id })
+        const product = await Product.findOneAndDelete({ _id: req.params.id})
 
         if (!product) {
             res.status(404).send()
@@ -185,6 +203,9 @@ router.delete('/delete-product/:id', auth, async (req, res) => {
     }
 })
 
+/**
+ * Update Multiple Products by ProductIDs
+ */
 router.delete('/delete-multiple-product', auth, async (req, res) => {
     console.log(req.body.product_ids)
     const product_ids = req.body.product_ids
@@ -220,9 +241,16 @@ const upload = multer({
     }
 });
 
+/**
+ * Upload product image by ProductID
+ */
 router.post('/products/:id/image', auth, upload.single('product_image'), async (req, res) => {
     const buffer = await sharp(req.file.buffer).resize({ width: 400, height: 400 }).png().toBuffer();
-    const product = await Product.findOne({ _id: req.params.id, owner: req.user._id });
+    // const product = await Product.findOne({ _id: req.params.id, owner: req.user._id });
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+        res.status(404).send()
+    }
     product.image = buffer;
     // req.user.avatar = buffer;
     // req.user.avatar = req.file.buffer;
@@ -235,9 +263,14 @@ router.post('/products/:id/image', auth, upload.single('product_image'), async (
     res.status(400).send({ error: error.message });
 })
 
-
+/**
+ * Delete Product image by ProductID
+ */
 router.delete('/products/:id/image', auth, async (req, res) => {
     const product = await Product.findById(req.params.id);
+    if (!product) {
+        res.status(404).send()
+    }
     product.image = undefined;
     await product.save()
     res.send({
@@ -249,6 +282,9 @@ router.delete('/products/:id/image', auth, async (req, res) => {
     // res.send()
 })
 
+/**
+ * Get Product Image
+ */
 router.get('/products/:id/image', async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
